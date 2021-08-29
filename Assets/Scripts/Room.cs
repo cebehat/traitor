@@ -11,24 +11,28 @@ public class Room : MonoBehaviour
     public int x;
     [SerializeField]
     public int z;
+    [SerializeField]
+    public RoomType roomType = RoomType.GENERIC;
 
     private RoomSpawner parent;
     private PrefabManager prefabManager;
 
     [SerializeField]
-    public RoomComponent northWall = RoomComponent.SOLID_WALL;
-    [SerializeField]
-    public RoomComponent southWall = RoomComponent.SOLID_WALL;
-    [SerializeField]
-    public RoomComponent eastWall = RoomComponent.SOLID_WALL;
-    [SerializeField]
-    public RoomComponent westWall = RoomComponent.SOLID_WALL;
+    public Dictionary<RoomDirection, RoomComponent> Walls = 
+        new Dictionary<RoomDirection, RoomComponent> { 
+            { RoomDirection.NORTH, RoomComponent.SOLID_WALL },
+            { RoomDirection.SOUTH, RoomComponent.SOLID_WALL },
+            { RoomDirection.EAST, RoomComponent.SOLID_WALL },
+            { RoomDirection.WEST, RoomComponent.SOLID_WALL }};
 
 
     private void Awake()
     {
-        parent = GetComponentInParent<RoomSpawner>();
+        parent = FindObjectOfType<RoomSpawner>();
         prefabManager = FindObjectOfType<PrefabManager>();
+        var collider = gameObject.AddComponent<BoxCollider>();
+        collider.isTrigger = true;
+        collider.size = new Vector3(10, 4, 10);
         Debug.Log("Room created");
     }
 
@@ -41,21 +45,33 @@ public class Room : MonoBehaviour
 
     public void SpawnRoom()
     {
-        SpawnWall(RoomDirection.NORTH, northWall);
-        SpawnWall(RoomDirection.SOUTH, southWall);
-        SpawnWall(RoomDirection.EAST, eastWall);
-        SpawnWall(RoomDirection.WEST, westWall);
-        SpawnWall(RoomDirection.NORTH, RoomComponent.CEILING);
-        SpawnWall(RoomDirection.NORTH, RoomComponent.FLOOR);
+        SpawnWall(RoomDirection.NORTH);
+        SpawnWall(RoomDirection.SOUTH);
+        SpawnWall(RoomDirection.EAST);
+        SpawnWall(RoomDirection.WEST);
+        SpawnFloorAndCeiling();
     }
 
-    private void SpawnWall(RoomDirection direction, RoomComponent roomComponent)
+    private void SpawnFloorAndCeiling()
     {
+        GameObject prefabToSpawn = prefabManager.roomComponentDictionary[RoomComponent.FLOOR];
+        var position = transform.position + new Vector3(0f, 0f, 0f);
+        Instantiate(prefabToSpawn, position, transform.rotation, transform);
+        prefabToSpawn = prefabManager.roomComponentDictionary[RoomComponent.CEILING];
+        position = transform.position + new Vector3(0f, 4f, 0f);
+        Instantiate(prefabToSpawn, position, transform.rotation, transform);
+        return;
+
+    }
+    private void SpawnWall(RoomDirection direction)
+    {
+        var roomComponent = Walls[direction];
+
         if (roomComponent == RoomComponent.NO_WALL) return;
 
         Vector3 position;
         Quaternion rotation = new Quaternion();
-        GameObject prefabToSpawn = prefabManager._myDictionary[roomComponent];
+        GameObject prefabToSpawn = prefabManager.roomComponentDictionary[roomComponent];
         if(roomComponent == RoomComponent.FLOOR)
         {
             position = transform.position + new Vector3(0f, 0f, 0f);

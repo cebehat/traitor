@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class RoomSpawner : MonoBehaviour
 {
-    
+    List<Room> spawnedRooms = new List<Room>();
 
     // Start is called before the first frame update
     void Start()
@@ -15,12 +15,14 @@ public class RoomSpawner : MonoBehaviour
         var originRoomNorth = originRoomNorthObject.AddComponent<Room>();
         originRoomNorth.x = 0;
         originRoomNorth.z = 0;
-        originRoomNorth.northWall = RoomComponent.DOORWAY;
-        originRoomNorth.southWall = RoomComponent.NO_WALL;
-        originRoomNorth.eastWall = RoomComponent.DOORWAY;
-        originRoomNorth.westWall = RoomComponent.DOORWAY;
+        originRoomNorth.Walls[RoomDirection.NORTH] = RoomComponent.DOORWAY;
+        originRoomNorth.Walls[RoomDirection.SOUTH] = RoomComponent.NO_WALL;
+        originRoomNorth.Walls[RoomDirection.EAST] = RoomComponent.DOORWAY;
+        originRoomNorth.Walls[RoomDirection.WEST] = RoomComponent.DOORWAY;
         originRoomNorthObject.name = String.Format("Room [{0}:{1}]", 0, 0);
+        originRoomNorth.roomType = RoomType.FOYER;
         originRoomNorth.SpawnRoom();
+        spawnedRooms.Add(originRoomNorth);
         
         
         var originRoomSouthObject = new GameObject(String.Format("Room [{0}:{1}]", 0, -1));
@@ -28,11 +30,12 @@ public class RoomSpawner : MonoBehaviour
         var originRoomSouth = originRoomSouthObject.AddComponent<Room>();
         originRoomSouth.x = 0;
         originRoomSouth.z = -1;
-        originRoomSouth.northWall = RoomComponent.NO_WALL;
-        originRoomSouth.southWall = RoomComponent.DECOY_DOOR;
+        originRoomSouth.Walls[RoomDirection.NORTH] = RoomComponent.NO_WALL;
+        originRoomSouth.Walls[RoomDirection.SOUTH] = RoomComponent.DECOY_DOOR;
         originRoomSouthObject.name = String.Format("Room [{0}:{1}]", 0, -1);
+        originRoomSouth.roomType = RoomType.FOYER;
         originRoomSouth.SpawnRoom();
-
+        spawnedRooms.Add(originRoomSouth);
     }
 
     // Update is called once per frame
@@ -41,132 +44,123 @@ public class RoomSpawner : MonoBehaviour
         
     }
 
-    void GenerateAdjacentRoom(GameObject room, RoomDirection direction)
+    private List<Room> GetAdjacentRooms(Room room)
     {
-        Room originRoomComponent = room.GetComponent<Room>();
-        Vector3 spawnPosition = new Vector3();
+        return spawnedRooms.Where(r => room.IsAdjacent(r)).ToList();
+    }
 
-        int x = originRoomComponent.x;
-        int z = originRoomComponent.z;
+    RoomDirection GetOppositeDirection(RoomDirection dir)
+    {
+        if (dir == RoomDirection.NORTH) return RoomDirection.SOUTH;
+        if (dir == RoomDirection.SOUTH) return RoomDirection.NORTH;
+        if (dir == RoomDirection.EAST) return RoomDirection.WEST;
+        return RoomDirection.EAST;
+    }
+
+    void GenerateAdjacentRoom(Room room, RoomDirection direction)
+    {
+        int x = room.x;
+        int z = room.z;
+        var newRoomObject = new GameObject();
+        var newRoom = newRoomObject.AddComponent<Room>();
+
+
+
         switch (direction)
         {
             case RoomDirection.NORTH:
-                spawnPosition = room.transform.position + new Vector3(0f, 0f, 10f);
+                z++;
+                newRoom.Walls[direction] = room.Walls[GetOppositeDirection(direction)];
+                break;
+            case RoomDirection.SOUTH:
+                z--;
+                newRoom.Walls[direction] = room.Walls[GetOppositeDirection(direction)];
+                break;
+            case RoomDirection.EAST:
+                x++;
+                newRoom.Walls[direction] = room.Walls[GetOppositeDirection(direction)];
+                break;
+            case RoomDirection.WEST:
+                x--;
+                newRoom.Walls[direction] = room.Walls[GetOppositeDirection(direction)];
+                break;
+            default:
+                break;
+        }
+        newRoom.x = x;
+        newRoom.z = z;
+        newRoomObject.name = String.Format("Room [{0}:{1}]", x, z);
+        newRoomObject.transform.position = new Vector3(10f * x, 0f, 10f * z);
+        var availableSpawnDirs = GetAvailableSpawnDirectionsForRoom(newRoom);
+        for (int i = 0; i < 4; i++)
+        {
+            var dir = (RoomDirection)i;
+            var ar = GetAdjacentRoom(newRoom, dir);
+
+            if (availableSpawnDirs.Contains(dir) && (UnityEngine.Random.Range(0f, 1f) < 0.7f))
+            {
+                newRoom.Walls[dir] = RoomComponent.DOORWAY;
+            }
+            else if (ar != null && (ar.Walls[GetOppositeDirection(dir)] == RoomComponent.DOORWAY || ar.Walls[GetOppositeDirection(dir)] == RoomComponent.NO_WALL))
+            {
+                newRoom.Walls[dir] = ar.Walls[GetOppositeDirection(dir)];
+            }
+        }
+        newRoom.SpawnRoom();
+        spawnedRooms.Add(newRoom);
+    }
+
+    public Room GetAdjacentRoom(Room relativeRoom, RoomDirection dir)
+    {
+        int x = relativeRoom.x;
+        int z = relativeRoom.z;
+        switch (dir)
+        {
+            case RoomDirection.NORTH:
                 z++;
                 break;
             case RoomDirection.SOUTH:
-                spawnPosition = room.transform.position - new Vector3(0f, 0f, 10f);
                 z--;
                 break;
             case RoomDirection.EAST:
-                spawnPosition = room.transform.position + new Vector3(10f, 0f, 0f);
                 x++;
                 break;
             case RoomDirection.WEST:
-                spawnPosition = room.transform.position - new Vector3(10f, 0f, 0f);
                 x--;
                 break;
+            default:
+                break;
         }
+        return spawnedRooms.SingleOrDefault(sr => sr.x == x && sr.z == z);
+    }
+
+    public List<RoomDirection> GetAvailableSpawnDirectionsForRoom(Room room)
+    {
+        var adjacentRooms = GetAdjacentRooms(room);
+        return Enum.GetValues(typeof(RoomDirection))
+                .Cast<RoomDirection>()
+                .Except(adjacentRooms.Select(ar => room.GetRelativeDirection(ar)))
+                .ToList();
+    }
+
+    public List<RoomDirection> GetAlreadyExistingAdjacentRooms(Room room)
+    {
+        var adjacentRooms = GetAdjacentRooms(room);
+        return adjacentRooms.Select(ar => room.GetRelativeDirection(ar))
+                .ToList();
     }
 
     public void SpawnRooms(GameObject originRoom)
     {
-        var adjacentRooms = GetComponentsInChildren<Room>().Where(room => room.IsAdjacent(originRoom.GetComponent<Room>())).ToList();
-        var adjacentRoomDirections = adjacentRooms.Select(r => r.GetRelativeDirection(originRoom.GetComponent<Room>())).ToList();
-        
-        foreach(RoomDirection rd in Enum.GetValues(typeof(RoomDirection)))
-        {
-            if (!adjacentRoomDirections.Contains(rd))
-            {
+        var room = originRoom.GetComponent<Room>();
+        var adjacentRoomDirections = GetAvailableSpawnDirectionsForRoom(room);
 
+        foreach(var dir in adjacentRoomDirections)
+        {
+            if (room.Walls[dir] == RoomComponent.DOORWAY || room.Walls[dir] == RoomComponent.NO_WALL)
+            {
+                GenerateAdjacentRoom(room, dir);
             }
         }
-
-        //RoomDirection directionToSpawner;
-        //Room originRoomComponent = originRoom.GetComponent<Room>();
-
-            //int x = originRoomComponent.x;
-            //int z = originRoomComponent.z;
-            //switch (directionFromSpawner)
-            //{
-            //    case RoomDirection.NORTH:                
-            //        spawnPosition = originRoom.transform.position + new Vector3(0f, 0f, 10f);
-            //        z++;
-            //        directionToSpawner = RoomDirection.SOUTH;
-            //        break;
-            //    case RoomDirection.SOUTH:
-            //        spawnPosition = originRoom.transform.position - new Vector3(0f, 0f, 10f);
-            //        z--;
-            //        directionToSpawner = RoomDirection.NORTH;
-            //        break;
-            //    case RoomDirection.EAST:
-            //        spawnPosition = originRoom.transform.position + new Vector3(10f, 0f, 0f);
-            //        x++;
-            //        directionToSpawner = RoomDirection.WEST;
-            //        break;
-            //    case RoomDirection.WEST:
-            //        spawnPosition = originRoom.transform.position - new Vector3(10f, 0f, 0f);
-            //        x--;
-            //        directionToSpawner = RoomDirection.EAST;
-            //        break;
-            //    default:
-            //        spawnPosition = new Vector3();
-            //        directionToSpawner = RoomDirection.NORTH;
-            //        break;
-            //}
-            //Debug.Log(spawnPosition);
-
-
-            //Room newRoomComponent;
-
-            //if(GetComponentsInChildren<Room>().Any(room => room.x == x && room.z == z))
-            //{
-            //    newRoomComponent = GetComponentsInChildren<Room>().Single(room => room.x == x && room.z == z);
-            //    Debug.Log("Attaching existing room");
-            //}
-            //else
-            //{
-            //    var newRoom = Instantiate(roomPrefab, spawnPosition, originRoom.transform.rotation, transform);
-            //    newRoom.name = String.Format("Room [{0}:{1}]", x, z);
-            //    newRoomComponent = newRoom.GetComponent<Room>();
-            //    if(GetComponentsInChildren<Room>().Count(r => r.HasOpenPathway()) > 2)
-            //    {
-            //        newRoomComponent.AllowDeadEnd = true;
-            //    }
-            //    else
-            //    {
-            //        newRoomComponent.AllowDeadEnd = false;
-            //    }
-            //    Debug.Log("Spawning new room");
-            //}
-            //newRoomComponent.x = x;
-            //newRoomComponent.z = z;
-            //AddAdjacentRooms(newRoomComponent);
-    }
-
-    void AddAdjacentRooms(Room room)
-    {
-        //var adjacentRooms = GetComponentsInChildren<Room>().Where(r => r.IsAdjacent(room)).ToList();
-
-        //if (adjacentRooms.Any())
-        //{
-        //    foreach(var aRoom in adjacentRooms)
-        //    {
-        //        RoomDirection relativeDirection = room.GetRelativeDirection(aRoom);
-        //        if (!room.adjacentRooms.ContainsKey(relativeDirection))
-        //        {
-        //            room.AddAdjacentRoom(relativeDirection, aRoom);
-        //        }
-        //        relativeDirection = aRoom.GetRelativeDirection(room);
-        //        if (!aRoom.adjacentRooms.ContainsKey(relativeDirection))
-        //        {
-        //            aRoom.AddAdjacentRoom(relativeDirection, room);
-        //        }
-        //        if (aRoom.HasConnectingDoor(room))
-        //        {
-        //            room.OpenDoorways.Add(room.GetRelativeDirection(aRoom));
-        //        }
-        //    }
-        //}
     }
 }

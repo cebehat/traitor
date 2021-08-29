@@ -17,6 +17,7 @@ public enum RoomType
     TEENROOM,
     CHILDROOM,
     LIBRARY,
+    FOYER,
 }
 
 public enum RoomComponent
