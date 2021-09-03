@@ -9,4 +9,8 @@ public static class Extensions
     {
         return values.Contains(val);
     }
+
+    public static bool GreaterOrLessThan(this int val, int val2){
+        return (val + 1) == val2 || (val - 1) == val2;
+    }
 }

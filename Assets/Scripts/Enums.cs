@@ -27,5 +27,6 @@ public enum RoomComponent
     NO_WALL,
     DECOY_DOOR,
     FLOOR,
-    CEILING
+    CEILING,
+    DOOR,
 }

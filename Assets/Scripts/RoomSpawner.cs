@@ -3,39 +3,80 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using MLAPI;
+using MLAPI.NetworkVariable;
+using MLAPI.NetworkVariable.Collections;
+using MLAPI.Messaging;
+using System.Threading;
 
-public class RoomSpawner : MonoBehaviour
+public class RoomSpawner : NetworkBehaviour
 {
-    List<Room> spawnedRooms = new List<Room>();
-
-    // Start is called before the first frame update
-    void Start()
+    public NetworkList<Room> spawnedRooms = new NetworkList<Room>(new NetworkVariableSettings
     {
-        var originRoomNorthObject = new GameObject(String.Format("Room [{0}:{1}]", 0, 0));
-        var originRoomNorth = originRoomNorthObject.AddComponent<Room>();
+        WritePermission = NetworkVariablePermission.ServerOnly,
+        ReadPermission = NetworkVariablePermission.Everyone
+    });
+    //public NetworkVariable<List<Room>> spawnedRooms = new NetworkVariable<List<Room>>(new NetworkVariableSettings
+    //{
+    //    WritePermission = NetworkVariablePermission.ServerOnly,
+    //    ReadPermission = NetworkVariablePermission.Everyone
+    //});
+
+    [ServerRpc]
+    void AddRoomToHouseServerRpc(string roomJSON, ServerRpcParams rpcParams = default)
+    {
+        Debug.Log(rpcParams.ToString());
+        try
+        {
+            Room room = JsonUtility.FromJson<Room>(roomJSON);
+            spawnedRooms.Add(room);
+        }
+        catch (Exception e)
+        {
+
+        }
+        
+    }
+
+    void AddRoomToHouse(Room room)
+    {
+        AddRoomToHouseServerRpc(JsonUtility.ToJson(room));
+    }
+
+
+    public void Start()
+    {
+        NetworkManager.Singleton.OnServerStarted += ServerStarted;
+    }
+    // Start is called before the first frame update
+    public override void NetworkStart()
+    {
+        
+        //if(NetworkManager.Singleton.)
+        Debug.Log("NetworkStart");
+        
+    }
+
+    private void ServerStarted()
+    {
+
+        var originRoomNorth = new Room();
         originRoomNorth.x = 0;
-        originRoomNorth.z = 0;
+        originRoomNorth.z = 1;
         originRoomNorth.Walls[RoomDirection.NORTH] = RoomComponent.DOORWAY;
         originRoomNorth.Walls[RoomDirection.SOUTH] = RoomComponent.NO_WALL;
         originRoomNorth.Walls[RoomDirection.EAST] = RoomComponent.DOORWAY;
         originRoomNorth.Walls[RoomDirection.WEST] = RoomComponent.DOORWAY;
-        originRoomNorthObject.name = String.Format("Room [{0}:{1}]", 0, 0);
         originRoomNorth.roomType = RoomType.FOYER;
-        originRoomNorth.SpawnRoom();
-        spawnedRooms.Add(originRoomNorth);
-        
-        
-        var originRoomSouthObject = new GameObject(String.Format("Room [{0}:{1}]", 0, -1));
-        originRoomSouthObject.transform.position -= new Vector3(0f, 0f, 10f);
-        var originRoomSouth = originRoomSouthObject.AddComponent<Room>();
+        AddRoomToHouse(originRoomNorth);
+
+        var originRoomSouth = new Room();
         originRoomSouth.x = 0;
-        originRoomSouth.z = -1;
+        originRoomSouth.z = 0;
         originRoomSouth.Walls[RoomDirection.NORTH] = RoomComponent.NO_WALL;
         originRoomSouth.Walls[RoomDirection.SOUTH] = RoomComponent.DECOY_DOOR;
-        originRoomSouthObject.name = String.Format("Room [{0}:{1}]", 0, -1);
         originRoomSouth.roomType = RoomType.FOYER;
-        originRoomSouth.SpawnRoom();
-        spawnedRooms.Add(originRoomSouth);
+        AddRoomToHouse(originRoomSouth);
     }
 
     // Update is called once per frame
@@ -70,23 +111,20 @@ public class RoomSpawner : MonoBehaviour
         {
             case RoomDirection.NORTH:
                 z++;
-                newRoom.Walls[direction] = room.Walls[GetOppositeDirection(direction)];
                 break;
             case RoomDirection.SOUTH:
                 z--;
-                newRoom.Walls[direction] = room.Walls[GetOppositeDirection(direction)];
                 break;
             case RoomDirection.EAST:
                 x++;
-                newRoom.Walls[direction] = room.Walls[GetOppositeDirection(direction)];
                 break;
             case RoomDirection.WEST:
-                x--;
-                newRoom.Walls[direction] = room.Walls[GetOppositeDirection(direction)];
+                x--; 
                 break;
             default:
                 break;
         }
+        newRoom.Walls[GetOppositeDirection(direction)] = room.Walls[direction] == RoomComponent.DOORWAY ? RoomComponent.DOOR : (room.Walls[GetOppositeDirection(direction)] == RoomComponent.DOOR ? RoomComponent.DOORWAY : room.Walls[GetOppositeDirection(direction)]);
         newRoom.x = x;
         newRoom.z = z;
         newRoomObject.name = String.Format("Room [{0}:{1}]", x, z);
@@ -99,15 +137,15 @@ public class RoomSpawner : MonoBehaviour
 
             if (availableSpawnDirs.Contains(dir) && (UnityEngine.Random.Range(0f, 1f) < 0.7f))
             {
-                newRoom.Walls[dir] = RoomComponent.DOORWAY;
+                newRoom.Walls[dir] = RoomComponent.DOOR;
             }
             else if (ar != null && (ar.Walls[GetOppositeDirection(dir)] == RoomComponent.DOORWAY || ar.Walls[GetOppositeDirection(dir)] == RoomComponent.NO_WALL))
             {
                 newRoom.Walls[dir] = ar.Walls[GetOppositeDirection(dir)];
             }
         }
-        newRoom.SpawnRoom();
-        spawnedRooms.Add(newRoom);
+        //newRoom.SpawnRoom();
+        //AddRoomToHouse(newRoom);
     }
 
     public Room GetAdjacentRoom(Room relativeRoom, RoomDirection dir)
@@ -157,10 +195,16 @@ public class RoomSpawner : MonoBehaviour
 
         foreach(var dir in adjacentRoomDirections)
         {
-            if (room.Walls[dir] == RoomComponent.DOORWAY || room.Walls[dir] == RoomComponent.NO_WALL)
+            if (ShouldGenerateRoom(room.Walls[dir]))
             {
-                GenerateAdjacentRoom(room, dir);
+                //GenerateAdjacentRoom(room, dir);
             }
         }
+    }
+
+    private bool ShouldGenerateRoom(RoomComponent roomComponent)
+    {
+        var passageWays = new List<RoomComponent> { RoomComponent.DOORWAY, RoomComponent.NO_WALL, RoomComponent.DOOR };
+        return passageWays.Contains(roomComponent);
     }
 }

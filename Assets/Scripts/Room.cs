@@ -18,12 +18,13 @@ public class Room : MonoBehaviour
     private PrefabManager prefabManager;
 
     [SerializeField]
-    public Dictionary<RoomDirection, RoomComponent> Walls = 
-        new Dictionary<RoomDirection, RoomComponent> { 
+    public Dictionary<RoomDirection, RoomComponent> Walls =
+        new Dictionary<RoomDirection, RoomComponent> {
             { RoomDirection.NORTH, RoomComponent.SOLID_WALL },
             { RoomDirection.SOUTH, RoomComponent.SOLID_WALL },
             { RoomDirection.EAST, RoomComponent.SOLID_WALL },
-            { RoomDirection.WEST, RoomComponent.SOLID_WALL }};
+            { RoomDirection.WEST, RoomComponent.SOLID_WALL }
+        };
 
 
     private void Awake()
@@ -61,7 +62,18 @@ public class Room : MonoBehaviour
         position = transform.position + new Vector3(0f, 4f, 0f);
         Instantiate(prefabToSpawn, position, transform.rotation, transform);
         return;
+    }
 
+    private void SpawnDoor(RoomDirection direction)
+    {
+        if(Walls[direction] == RoomComponent.DOORWAY)
+        {
+            //check if door is already spawned there
+            var doorPrefab = prefabManager.roomComponentDictionary[RoomComponent.DOOR];
+            //Instantiate(doorPrefab, )
+
+
+        }
     }
     private void SpawnWall(RoomDirection direction)
     {
