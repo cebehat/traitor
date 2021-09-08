@@ -1,9 +1,12 @@
+using System;
+
+[Flags]
 public enum RoomDirection
 {
-    NORTH,
-    SOUTH,
-    EAST,
-    WEST
+    NORTH = 1,
+    SOUTH = 2,
+    EAST = 3,
+    WEST = 4
 }
 public enum RoomType
 {
