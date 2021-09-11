@@ -3,23 +3,12 @@
     "rootNamespace": "",
     "references": [
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "Cebt.Shared",
+        "Cebt.RoomData"
     ],
     "includePlatforms": [
-        "CloudRendering",
-        "GameCoreScarlett",
-        "GameCoreXboxOne",
-        "iOS",
-        "LinuxStandalone64",
-        "Lumin",
-        "macOSStandalone",
-        "PS4",
-        "PS5",
-        "Stadia",
-        "Switch",
-        "tvOS",
-        "WebGL",
-        "XboxOne"
+        "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

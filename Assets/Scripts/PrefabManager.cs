@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using Cebt.Shared;
 
 public class PrefabManager : MonoBehaviour, ISerializationCallbackReceiver
 {

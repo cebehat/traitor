@@ -8,6 +8,8 @@ using MLAPI.NetworkVariable;
 using MLAPI.NetworkVariable.Collections;
 using MLAPI.Messaging;
 using System.Threading;
+using Cebt.RoomData;
+using Cebt.Shared;
 
 public class RoomSpawner : NetworkBehaviour
 {
@@ -39,7 +41,7 @@ public class RoomSpawner : NetworkBehaviour
     [ServerRpc]
     void SetRoomAsSpawnedServerRpc(int X, int Z)
     {
-        roomInfoMap.Value.GetRoomAtPosition(X, Z).IsSpawned = true;
+        roomInfoMap.Value.GetRoomAtPosition(X, Z).IsRendered = true;
     }
 
     #endregion
