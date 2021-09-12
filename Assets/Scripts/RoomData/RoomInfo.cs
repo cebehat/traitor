@@ -13,6 +13,8 @@ namespace Cebt.RoomData
         //Z is the north/south coordinate
         public int Z { get; set; } = 0;
 
+        public int FloorNumber { get; set; } = 0;
+
         //the east/west physical size of the room
         public float RoomWidth = 10f;
         //the north/south physical size of the room
@@ -51,6 +53,11 @@ namespace Cebt.RoomData
             }
             direction = 0;
             return false;
+        }
+
+        public string GetPrefabStringPrefix()
+        {
+            return String.Format("Rooms/{0}",Enum.GetName(typeof(RoomType), RoomType));
         }
         /// <summary>
         /// Method that returns wether a room is next to this room

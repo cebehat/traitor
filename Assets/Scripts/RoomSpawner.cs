@@ -10,17 +10,29 @@ using MLAPI.Messaging;
 using System.Threading;
 using Cebt.RoomData;
 using Cebt.Shared;
-
 public class RoomSpawner : NetworkBehaviour
 {
 
+    public float MaxRooms { get; set; } = 100;
+    public float MinRooms { get; set; } = 30;
+
+    public bool DevMode { get; set; } = true;
+
+    public RoomInfoMap roomInfoMap = new RoomInfoMap();
+
+    private bool IsOnlineGame = false;
+
+
+
     #region Server-stuff
 
-    public NetworkVariable<RoomInfoMap> roomInfoMap = new NetworkVariable<RoomInfoMap>(new NetworkVariableSettings
+    public NetworkVariable<RoomInfoMap> networkedRoomInfoMap = new NetworkVariable<RoomInfoMap>(new NetworkVariableSettings
     {
         WritePermission = NetworkVariablePermission.ServerOnly,
         ReadPermission = NetworkVariablePermission.Everyone
     });
+
+    
 
     [ServerRpc]
     void AddRoomToHouseServerRpc(string roomJSON, ServerRpcParams rpcParams = default)
@@ -29,19 +41,76 @@ public class RoomSpawner : NetworkBehaviour
         try
         {
             RoomInfo room = JsonUtility.FromJson<RoomInfo>(roomJSON);
-            roomInfoMap.Value.Add(room);
+            networkedRoomInfoMap.Value.TryAddRoom(room);
         }
         catch (Exception e)
         {
-
+            Debug.Log(e.Message);
         }
         
     }
 
     [ServerRpc]
-    void SetRoomAsSpawnedServerRpc(int X, int Z)
+    void SetRoomAsSpawnedServerRpc(int X, int Z, int Floor)
     {
-        roomInfoMap.Value.GetRoomAtPosition(X, Z).IsRendered = true;
+        networkedRoomInfoMap.Value.GetRoomAtPosition(X, Z, Floor).IsRendered = true;
+    }
+
+    #endregion
+
+    #region Unity-Events
+    // Start is called before the first frame update
+    public void Start()
+    {
+        SpawnEntryHall();
+        //if (!DevMode)
+        //{
+        //    NetworkManager.Singleton.OnServerStarted += ServerStarted;
+        //}
+        //else
+        //{
+        //    GenerateMap();
+        //}
+    }
+
+    // Update is called once per frame
+    public void Update()
+    {
+        IEnumerable<RoomInfo> unspawnedRooms = new List<RoomInfo>();
+        if (DevMode)
+        {
+            //Debug.Log("devmode client update");
+            unspawnedRooms = roomInfoMap.GetUnspawnedRooms();            
+        }
+        else if (NetworkManager.Singleton.IsClient)
+        {
+            unspawnedRooms = networkedRoomInfoMap.Value.GetUnspawnedRooms();
+        }
+
+        if (unspawnedRooms.Any())
+        {
+            foreach (var item in unspawnedRooms)
+            {
+                SpawnRoom(item);
+            }
+        }
+    }
+
+    public void OnEnable()
+    {
+        
+    }
+
+    public override void NetworkStart()
+    {
+
+        //if(NetworkManager.Singleton.)
+        Debug.Log("NetworkStart");
+        if (NetworkManager.Singleton.IsServer)
+        {
+            networkedRoomInfoMap.Value = new RoomInfoMap();
+        }
+
     }
 
     #endregion
@@ -49,71 +118,99 @@ public class RoomSpawner : NetworkBehaviour
     void AddRoomToHouse(RoomInfo room)
     {
         Debug.Log("Adding room to house");
-        AddRoomToHouseServerRpc(JsonUtility.ToJson(room));
+        if (IsOnlineGame)
+        {
+            AddRoomToHouseServerRpc(JsonUtility.ToJson(room));
+        }
+        else
+        {
+            roomInfoMap.TryAddRoom(room);
+        }
+        
+    }
+
+    void SetRoomAsSpawned(RoomInfo room)
+    {
+        Debug.Log("Adding room to house");
+        if (IsOnlineGame)
+        {
+            SetRoomAsSpawnedServerRpc(room.X, room.Z, room.FloorNumber);
+        }
+        else
+        {
+            roomInfoMap.GetRoomAtPosition(room.X, room.Z, room.FloorNumber).IsRendered = true;
+        }
     }
 
     void SpawnRoom(RoomInfo room)
     {
-        //spawn the room prefab with the roomInfo object
-        SetRoomAsSpawnedServerRpc(room.X, room.Z);
-    }
-
-
-    public void Start()
-    {
-        NetworkManager.Singleton.OnServerStarted += ServerStarted;
-    }
-    // Start is called before the first frame update
-    public override void NetworkStart()
-    {
-        
-        //if(NetworkManager.Singleton.)
-        Debug.Log("NetworkStart");
-        if (NetworkManager.Singleton.IsServer)
+        try
         {
-            roomInfoMap.Value = new RoomInfoMap();
+            var roomObject = new GameObject("test");
+            var roomComponent = roomObject.AddComponent<Room>();
+            roomComponent.RoomInfo = room;
+            roomObject.transform.position = room.TransformPosition;
+            roomComponent.SpawnRoom();
+            SetRoomAsSpawned(room);
+        }
+        catch(Exception e)
+        {
+            Debug.Log(e.Message);
         }
         
+        //spawn the room prefab with the roomInfo object
+        
     }
+
+
+    
 
     private void ServerStarted()
     {
 
-        var originRoomNorth = new RoomInfo();
-        originRoomNorth.X = 0;
-        originRoomNorth.Z = 1;
-        originRoomNorth.Walls[RoomDirection.NORTH] = RoomComponent.DOORWAY;
-        originRoomNorth.Walls[RoomDirection.SOUTH] = RoomComponent.NO_WALL;
-        originRoomNorth.Walls[RoomDirection.EAST] = RoomComponent.DOORWAY;
-        originRoomNorth.Walls[RoomDirection.WEST] = RoomComponent.DOORWAY;
-        originRoomNorth.RoomType = RoomType.FOYER;
-        AddRoomToHouse(originRoomNorth);
-
-        var originRoomSouth = new RoomInfo();
-        originRoomSouth.X = 0;
-        originRoomSouth.Z = 0;
-        originRoomSouth.Walls[RoomDirection.NORTH] = RoomComponent.NO_WALL;
-        originRoomSouth.Walls[RoomDirection.SOUTH] = RoomComponent.DECOY_DOOR;
-        originRoomSouth.RoomType = RoomType.FOYER;
-        AddRoomToHouse(originRoomSouth);
-    }
-
-    // Update is called once per frame
-    public void Update()
-    {
-        if (NetworkManager.Singleton.IsClient)
-        {
-            var unspawnedRooms = roomInfoMap.Value.GetUnspawnedRooms();
-            if (unspawnedRooms.Any())
-            {
-                foreach (var item in unspawnedRooms)
-                {
-                    SpawnRoom(item);
-                }
-            }
-        }
         
     }
+
+    private void SpawnEntryHall()
+    {
+        var foyerNorth = new RoomInfo();
+        foyerNorth.X = 0;
+        foyerNorth.Z = 1;
+        foyerNorth.Walls[RoomDirection.NORTH] = RoomComponent.DOORWAY;
+        foyerNorth.Walls[RoomDirection.SOUTH] = RoomComponent.NO_WALL;
+        foyerNorth.Walls[RoomDirection.EAST] = RoomComponent.DOORWAY;
+        foyerNorth.Walls[RoomDirection.WEST] = RoomComponent.DOORWAY;
+        foyerNorth.RoomType = RoomType.FOYER;
+        AddRoomToHouse(foyerNorth);
+
+        var foyerSouth = new RoomInfo();
+        foyerSouth.X = 0;
+        foyerSouth.Z = 0;
+        foyerSouth.Walls[RoomDirection.NORTH] = RoomComponent.NO_WALL;
+        foyerSouth.Walls[RoomDirection.SOUTH] = RoomComponent.DECOY_DOOR;
+        foyerSouth.Walls[RoomDirection.EAST] = RoomComponent.SOLID_WALL;
+        foyerSouth.Walls[RoomDirection.WEST] = RoomComponent.SOLID_WALL;
+        foyerSouth.RoomType = RoomType.FOYER;
+        AddRoomToHouse(foyerSouth);
+    }
+
+    private void GenerateMap()
+    {
+        int roomCount = (int)Math.Round(UnityEngine.Random.Range(MinRooms, MaxRooms));
+
+        Debug.Log($"RoomCount {roomCount}");
+
+
+    }
+
+    private bool GenerateRoom()
+    {
+
+
+        return false;
+    }
+
+    
 
     //void GenerateAdjacentRoom(Room room, RoomDirection direction)
     //{
@@ -169,6 +266,7 @@ public class RoomSpawner : NetworkBehaviour
     {
         int x = relativeRoom.X;
         int z = relativeRoom.Z;
+        int floor = relativeRoom.FloorNumber;
         switch (dir)
         {
             case RoomDirection.NORTH:
@@ -186,7 +284,7 @@ public class RoomSpawner : NetworkBehaviour
             default:
                 break;
         }
-        return roomInfoMap.Value.GetRoomAtPosition(x, z);
+        return networkedRoomInfoMap.Value.GetRoomAtPosition(x, z, floor);
     }
 
     //public List<RoomDirection> GetAvailableSpawnDirectionsForRoom(RoomInfo room)

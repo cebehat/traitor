@@ -6,7 +6,6 @@ using UnityEngine.TestTools;
 
 public class RoomInfoMapTests
 {
-    private void 
 
     // A Test behaves as an ordinary method
     [Test]

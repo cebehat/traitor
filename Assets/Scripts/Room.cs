@@ -10,46 +10,48 @@ public class Room : MonoBehaviour
 {
 
     public RoomInfo RoomInfo;
-
-    private RoomSpawner parent;
     private PrefabManager prefabManager;
 
 
     private void Awake()
     {
-        parent = FindObjectOfType<RoomSpawner>();
         prefabManager = FindObjectOfType<PrefabManager>();
+    }
+
+    private void Start()
+    {
+        
         var collider = gameObject.AddComponent<BoxCollider>();
         collider.isTrigger = true;
         collider.size = new Vector3(10, 4, 10);
-        Debug.Log("Room created");
     }
 
     void OnTriggerEnter(Collider coll){
         if(coll.CompareTag("Player")){
             Debug.Log("Player Entered");
-            parent.SpawnRooms(gameObject);
         }
     }
 
     public void SpawnRoom()
     {
-        //SpawnWall(RoomDirection.NORTH);
-        //SpawnWall(RoomDirection.SOUTH);
-        //SpawnWall(RoomDirection.EAST);
-        //SpawnWall(RoomDirection.WEST);
-        SpawnFloorAndCeiling();
+        Instantiate(prefabManager.GetPrefab(RoomInfo.GetPrefabStringPrefix(), "FloorOrCeiling"), transform);
+        Instantiate(prefabManager.GetPrefab(RoomInfo.GetPrefabStringPrefix(), "FloorOrCeiling"), transform.position + new Vector3(0,4f,0), transform.rotation , transform);
+
+        SpawnWall(RoomDirection.NORTH);
+        SpawnWall(RoomDirection.SOUTH);
+        SpawnWall(RoomDirection.EAST);
+        SpawnWall(RoomDirection.WEST);
     }
 
     private void SpawnFloorAndCeiling()
     {
-        GameObject prefabToSpawn = prefabManager.roomComponentDictionary[RoomComponent.FLOOR];
-        var position = transform.position + new Vector3(0f, 0f, 0f);
-        Instantiate(prefabToSpawn, position, transform.rotation, transform);
-        prefabToSpawn = prefabManager.roomComponentDictionary[RoomComponent.CEILING];
-        position = transform.position + new Vector3(0f, 4f, 0f);
-        Instantiate(prefabToSpawn, position, transform.rotation, transform);
-        return;
+        //GameObject prefabToSpawn = prefabManager.roomComponentDictionary[RoomComponent.FLOOR];
+        //var position = transform.position + new Vector3(0f, 0f, 0f);
+        //Instantiate(prefabToSpawn, position, transform.rotation, transform);
+        //prefabToSpawn = prefabManager.roomComponentDictionary[RoomComponent.CEILING];
+        //position = transform.position + new Vector3(0f, 4f, 0f);
+        //Instantiate(prefabToSpawn, position, transform.rotation, transform);
+        //return;
     }
 
     //private void SpawnDoor(RoomDirection direction)
@@ -63,54 +65,39 @@ public class Room : MonoBehaviour
 
     //    }
     //}
-    //private void SpawnWall(RoomDirection direction)
-    //{
-    //    var roomComponent = Walls[direction];
+    private void SpawnWall(RoomDirection direction)
+    {
+        var roomComponent = RoomInfo.Walls[direction];
 
-    //    if (roomComponent == RoomComponent.NO_WALL) return;
+        if (roomComponent == RoomComponent.NO_WALL) return;
 
-    //    Vector3 position;
-    //    Quaternion rotation = new Quaternion();
-    //    GameObject prefabToSpawn = prefabManager.roomComponentDictionary[roomComponent];
-    //    if(roomComponent == RoomComponent.FLOOR)
-    //    {
-    //        position = transform.position + new Vector3(0f, 0f, 0f);
-    //        Instantiate(prefabToSpawn, position, rotation, transform);
-    //        return;
-    //    }
+        Vector3 position;
+        Quaternion rotation = new Quaternion();
+        GameObject prefabToSpawn = prefabManager.GetPrefab(RoomInfo.GetPrefabStringPrefix(), Enum.GetName(typeof(RoomComponent), roomComponent));
 
-    //    if (roomComponent == RoomComponent.CEILING)
-    //    {
-    //        position = transform.position + new Vector3(0f, 4f, 0f);
-    //        Instantiate(prefabToSpawn, position, rotation, transform);
-    //        return;
-    //    }
-
-
-
-    //    switch (direction)
-    //    {
-    //        case RoomDirection.NORTH:
-    //            position = transform.position + new Vector3(0f, 0f, 5f);
-    //            break;
-    //        case RoomDirection.SOUTH:
-    //            position = transform.position - new Vector3(0f, 0f, 5f);
-    //            break;
-    //        case RoomDirection.EAST:
-    //            position = transform.position + new Vector3(5f, 0f, 0f);
-    //            rotation = Quaternion.AngleAxis(90f, Vector3.up);
-    //            Quaternion.AngleAxis(90f, Vector3.up);
-    //            break;
-    //        case RoomDirection.WEST:
-    //            position = transform.position - new Vector3(5f, 0f, 0f);
-    //            rotation = Quaternion.AngleAxis(90f, Vector3.up);
-    //            break;            
-    //        default:
-    //            position = transform.position;
-    //            break;
-    //    }
-    //    Instantiate(prefabToSpawn, position, rotation, transform);
-    //}
+        switch (direction)
+        {
+            case RoomDirection.NORTH:
+                position = transform.position + new Vector3(0f, 0f, 5f);
+                break;
+            case RoomDirection.SOUTH:
+                position = transform.position - new Vector3(0f, 0f, 5f);
+                break;
+            case RoomDirection.EAST:
+                position = transform.position + new Vector3(5f, 0f, 0f);
+                rotation = Quaternion.AngleAxis(90f, Vector3.up);
+                Quaternion.AngleAxis(90f, Vector3.up);
+                break;
+            case RoomDirection.WEST:
+                position = transform.position - new Vector3(5f, 0f, 0f);
+                rotation = Quaternion.AngleAxis(90f, Vector3.up);
+                break;
+            default:
+                position = transform.position;
+                break;
+        }
+        Instantiate(prefabToSpawn, position, rotation, transform);
+    }
 
     //public bool IsAdjacent(Room otherRoom)
     //{

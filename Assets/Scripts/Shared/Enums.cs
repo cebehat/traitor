@@ -25,6 +25,13 @@ namespace Cebt.Shared
         FOYER,
     }
 
+    public enum RoomFloor
+    {
+        GROUND_FLOOR,
+        FIRST_FLOOR,
+        BASEMENT
+    }
+
     public enum RoomComponent
     {
         SOLID_WALL,
@@ -34,5 +41,5 @@ namespace Cebt.Shared
         FLOOR,
         CEILING,
         DOOR,
-    } 
+    }
 }

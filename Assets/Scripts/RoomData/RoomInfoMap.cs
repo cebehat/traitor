@@ -13,6 +13,7 @@ namespace Cebt.RoomData
 {
     public class RoomInfoMap
     {
+
         private List<RoomInfo> _roomInfos;
 
         public RoomInfoMap()
@@ -38,9 +39,14 @@ namespace Cebt.RoomData
             return true;
         }
 
-        public void Add(RoomInfo roomInfo)
+        public bool TryAddRoom(RoomInfo roomInfo)
         {
-            _roomInfos.Add(roomInfo);
+            if(GetRoomAtPosition(roomInfo.X, roomInfo.Z, roomInfo.FloorNumber) == null)
+            {
+                _roomInfos.Add(roomInfo);
+                return true;
+            }
+            return false;
         }
 
         public void AddRange(IEnumerable<RoomInfo> rooms)
@@ -48,9 +54,9 @@ namespace Cebt.RoomData
             _roomInfos.AddRange(rooms);
         }
 
-        public RoomInfo GetRoomAtPosition(int X, int Z)
+        public RoomInfo GetRoomAtPosition(int X, int Z, int Floor)
         {
-            return _roomInfos.SingleOrDefault(x => x.X == X && x.Z == Z);
+            return _roomInfos.SingleOrDefault(x => x.X == X && x.Z == Z && x.FloorNumber == Floor);
         }
 
         public Dictionary<RoomDirection, RoomInfo> GetAdjacentRooms(RoomInfo room)
