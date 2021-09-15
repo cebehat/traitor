@@ -21,24 +21,29 @@ public class RoomInfoTests
     public void RoomInfoTestIsAdjacent()
     {
         var originRoom = GetOriginTestRoom();
+        var southOriginRoom = new RoomInfo() { X = 0, Z = -1 };
         var northRoom = new RoomInfo() { X = 0, Z = 1 };
         var southRoom = new RoomInfo() { X = 0, Z = -1 };
         var eastRoom = new RoomInfo() { X = 1, Z = 0 };
         var westRoom = new RoomInfo() { X = -1, Z = 0 };
+        
 
         RoomDirection direction = 0;
         //test north room;
         Assert.IsTrue(originRoom.IsAdjacent(northRoom, out direction));
         Assert.AreEqual(RoomDirection.NORTH, direction, "Direction was wrong");
+        Assert.IsFalse(southOriginRoom.IsAdjacent(northRoom, out direction));
         //test south room;
         Assert.IsTrue(originRoom.IsAdjacent(southRoom, out direction));
         Assert.AreEqual(RoomDirection.SOUTH, direction, "Direction was wrong");
         //test east room;
-        Assert.IsTrue(originRoom.IsAdjacent(eastRoom, out direction));
+        Assert.IsTrue(originRoom.IsAdjacent(eastRoom, out direction));       
         Assert.AreEqual(RoomDirection.EAST, direction, "Direction was wrong");
+        Assert.IsFalse(southOriginRoom.IsAdjacent(eastRoom, out direction));
         //test west room;
         Assert.IsTrue(originRoom.IsAdjacent(westRoom, out direction));
         Assert.AreEqual(RoomDirection.WEST, direction, "Direction was wrong");
+        Assert.IsFalse(southOriginRoom.IsAdjacent(westRoom, out direction));
     }
     [Test]
     public void RoomInfoTestIsNotAdjacent()

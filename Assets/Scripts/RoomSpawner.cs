@@ -13,8 +13,8 @@ using Cebt.Shared;
 public class RoomSpawner : NetworkBehaviour
 {
 
-    public float MaxRooms { get; set; } = 100;
-    public float MinRooms { get; set; } = 30;
+    public float MaxRooms { get; set; } = 150;
+    public float MinRooms { get; set; } = 80;
 
     public bool DevMode { get; set; } = true;
 
@@ -62,7 +62,7 @@ public class RoomSpawner : NetworkBehaviour
     // Start is called before the first frame update
     public void Start()
     {
-        SpawnEntryHall();
+        GenerateMap();
         //if (!DevMode)
         //{
         //    NetworkManager.Singleton.OnServerStarted += ServerStarted;
@@ -115,6 +115,44 @@ public class RoomSpawner : NetworkBehaviour
 
     #endregion
 
+    public int GetRoomCount 
+    { 
+        get 
+        {
+            if (IsOnlineGame)
+            {
+                return networkedRoomInfoMap.Value.Count;
+            }
+            else
+            {
+                return roomInfoMap.Count;
+            }
+        } 
+    }
+
+    private RoomInfo GetRoomAtCoords(int X, int Z, int Floor)
+    {
+        if (IsOnlineGame)
+        {
+            return networkedRoomInfoMap.Value.GetRoomAtPosition(X, Z, Floor);
+        }
+        else
+        {
+            return roomInfoMap.GetRoomAtPosition(X, Z, Floor);
+        }
+    }
+
+    private IEnumerable<RoomInfo> GetRoomsWithSpawnableDirections()
+    {
+        if (IsOnlineGame)
+        {
+            return networkedRoomInfoMap.Value.GetRoomsWithSpawnableDirections();
+        }
+        else
+        {
+            return roomInfoMap.GetRoomsWithSpawnableDirections();
+        }
+    }
     void AddRoomToHouse(RoomInfo room)
     {
         Debug.Log("Adding room to house");
@@ -175,7 +213,7 @@ public class RoomSpawner : NetworkBehaviour
     {
         var foyerNorth = new RoomInfo();
         foyerNorth.X = 0;
-        foyerNorth.Z = 1;
+        foyerNorth.Z = 0;
         foyerNorth.Walls[RoomDirection.NORTH] = RoomComponent.DOORWAY;
         foyerNorth.Walls[RoomDirection.SOUTH] = RoomComponent.NO_WALL;
         foyerNorth.Walls[RoomDirection.EAST] = RoomComponent.DOORWAY;
@@ -185,7 +223,7 @@ public class RoomSpawner : NetworkBehaviour
 
         var foyerSouth = new RoomInfo();
         foyerSouth.X = 0;
-        foyerSouth.Z = 0;
+        foyerSouth.Z = -1;
         foyerSouth.Walls[RoomDirection.NORTH] = RoomComponent.NO_WALL;
         foyerSouth.Walls[RoomDirection.SOUTH] = RoomComponent.DECOY_DOOR;
         foyerSouth.Walls[RoomDirection.EAST] = RoomComponent.SOLID_WALL;
@@ -194,23 +232,59 @@ public class RoomSpawner : NetworkBehaviour
         AddRoomToHouse(foyerSouth);
     }
 
+
+    //Generate map needs to only be run by host if multiplayer.
+    //it needs to be able to set a state when it's done, that allows players to spawn in.
     private void GenerateMap()
     {
+        SpawnEntryHall();
         int roomCount = (int)Math.Round(UnityEngine.Random.Range(MinRooms, MaxRooms));
 
         Debug.Log($"RoomCount {roomCount}");
 
+        
+        while (GetRoomsWithSpawnableDirections().Any())
+        {
+            var originRoom = GetRoomsWithSpawnableDirections().First();
+            GenerateRooms(originRoom, true);
+        }
+        //first find open doorways
+        //then check if theres a room already connected to that doorway
+        //if a room is found, do nothing
+        //if a room is NOT found, create one 
+        //the new rooms walls should be randomly generated, with any walls lining up to existing rooms be NO_WALL types.
 
+        //spawn rules, if room Z coord is 0, south walls MUST be solid, unless it's a below surface room, in which case there are no coordinate limits.
     }
 
-    private bool GenerateRoom()
+    private bool GenerateRooms(RoomInfo relativeRoom, bool recursiveGen = false)
     {
-
-
+        Debug.Log(String.Format("Generating adjacent rooms for room at X{0}, Y{1}, Floor{2}", relativeRoom.X, relativeRoom.Z, relativeRoom.FloorNumber));
+        foreach(var direction in relativeRoom.OpenDoorways)
+        {
+            if(GetAdjacentRoom(relativeRoom, direction, out var coords) == null)
+            {
+                var newRoom = new RoomInfo() { X = coords.X, Z = coords.Z, FloorNumber = coords.Floor};
+                foreach (var dir in direction.OppositeDirection().AllOthers())
+                {
+                    if(newRoom.Z == 0 && dir == RoomDirection.SOUTH)
+                    {
+                        newRoom.Walls[dir] = RoomComponent.SOLID_WALL;
+                    }
+                    else if(GetAdjacentRoom(newRoom, dir) == null)
+                    {
+                        var solidWall = UnityEngine.Random.Range(0, 100) < (GetRoomCount < MinRooms ? 30f : 90f);
+                        newRoom.Walls[dir] = solidWall ? RoomComponent.SOLID_WALL : RoomComponent.DOORWAY;
+                    }
+                }
+                AddRoomToHouse(newRoom);
+                if (recursiveGen) return GenerateRooms(newRoom, recursiveGen);
+            }
+        }
         return false;
     }
 
-    
+
 
     //void GenerateAdjacentRoom(Room room, RoomDirection direction)
     //{
@@ -264,6 +338,18 @@ public class RoomSpawner : NetworkBehaviour
 
     public RoomInfo GetAdjacentRoom(RoomInfo relativeRoom, RoomDirection dir)
     {
+        RoomCoords coords;
+        return GetAdjacentRoom(relativeRoom, dir, out coords);
+    }
+
+    public RoomInfo GetAdjacentRoom(RoomInfo relativeRoom, RoomDirection dir, out RoomCoords coords)
+    {
+        coords = GetAdjacentRoomCoords(relativeRoom, dir);
+        return GetRoomAtCoords(coords.X, coords.Z, coords.Floor);
+    }
+
+    private RoomCoords GetAdjacentRoomCoords(RoomInfo relativeRoom, RoomDirection dir)
+    {
         int x = relativeRoom.X;
         int z = relativeRoom.Z;
         int floor = relativeRoom.FloorNumber;
@@ -284,7 +370,14 @@ public class RoomSpawner : NetworkBehaviour
             default:
                 break;
         }
-        return networkedRoomInfoMap.Value.GetRoomAtPosition(x, z, floor);
+        return new RoomCoords() { X = x, Z = z, Floor = floor };
+    }
+
+    public class RoomCoords
+    {
+        public int X { get; set; }
+        public int Z { get; set; }
+        public int Floor { get; set; }
     }
 
     //public List<RoomDirection> GetAvailableSpawnDirectionsForRoom(RoomInfo room)

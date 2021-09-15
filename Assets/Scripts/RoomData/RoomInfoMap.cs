@@ -16,28 +16,30 @@ namespace Cebt.RoomData
 
         private List<RoomInfo> _roomInfos;
 
+        public int Count { get { return _roomInfos.Count; } }
+
         public RoomInfoMap()
         {
             _roomInfos = new List<RoomInfo>();
         }
 
-        public bool CreateRoomNextTo(RoomInfo originRoom, RoomDirection roomDirection)
-        {
-            if (!GetSpawnableDirections(originRoom).HasFlag(roomDirection)) return false;
+        //public bool CreateRoomNextTo(RoomInfo originRoom, RoomDirection roomDirection)
+        //{
+        //    if (!GetSpawnableDirections(originRoom).HasFlag(roomDirection)) return false;
 
-            coordinates newCoords = GetCoordinatesForAdjacent(originRoom, roomDirection);
-            int X = newCoords.X;
-            int Z = newCoords.Z;
+        //    coordinates newCoords = GetCoordinatesForAdjacent(originRoom, roomDirection);
+        //    int X = newCoords.X;
+        //    int Z = newCoords.Z;
 
-            var newRoom = new RoomInfo()
-            {
-                X = X,
-                Z = Z
-            };
+        //    var newRoom = new RoomInfo()
+        //    {
+        //        X = X,
+        //        Z = Z
+        //    };
 
-            _roomInfos.Add(newRoom);
-            return true;
-        }
+        //    _roomInfos.Add(newRoom);
+        //    return true;
+        //}
 
         public bool TryAddRoom(RoomInfo roomInfo)
         {
@@ -79,6 +81,21 @@ namespace Cebt.RoomData
             adjacent.ForEach(x => dir = dir | x);
             RoomDirection allDirections = RoomDirection.NORTH | RoomDirection.SOUTH | RoomDirection.EAST | RoomDirection.WEST;
             return allDirections & ~dir;
+        }
+
+        private bool HasSpawnableDirections(RoomInfo room)
+        {
+            var adjacent = GetAdjacentRooms(room);
+            foreach(var direction in room.OpenDoorways)
+            {
+                if (!adjacent.ContainsKey(direction)) return true;
+            }
+            return false;
+        }
+
+        public IEnumerable<RoomInfo> GetRoomsWithSpawnableDirections()
+        {
+            return _roomInfos.Where(x => HasSpawnableDirections(x));
         }
 
         public IEnumerable<RoomInfo> GetUnspawnedRooms()

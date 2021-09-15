@@ -37,6 +37,35 @@ namespace Cebt.RoomData
             { RoomDirection.WEST, RoomComponent.NO_WALL }
             };
 
+        public IEnumerable<RoomDirection> OpenDoorways 
+        { 
+            get 
+            {
+                List<RoomDirection> openDirections = new List<RoomDirection>();
+                foreach(RoomDirection dir  in Enum.GetValues(typeof(RoomDirection)))
+                    {
+                        if (IsOpenDoorway(Walls[dir]))
+                        {
+                        openDirections.Add(dir);
+                        }
+                    }
+                return openDirections;
+            } 
+        }
+
+        private bool IsOpenDoorway(RoomComponent component)
+        {
+            switch (component)
+            {
+                case RoomComponent.DOORWAY:
+                case RoomComponent.NO_WALL:
+                case RoomComponent.DOOR:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         /// <summary>
         /// Method to distinguish if a room is adjacent to this room 
         /// and if so which direction it is in
@@ -67,7 +96,7 @@ namespace Cebt.RoomData
         /// <returns></returns>
         public bool IsAdjacent(RoomInfo otherRoom)
         {
-            return (otherRoom.X.OneGreaterOrLessThan(this.X) && otherRoom.Z == this.X) ||
+            return (otherRoom.X.OneGreaterOrLessThan(this.X) && otherRoom.Z == this.Z) ||
                 (otherRoom.X == this.X && otherRoom.Z.OneGreaterOrLessThan(this.Z));
         }        
 
@@ -78,6 +107,7 @@ namespace Cebt.RoomData
         /// <returns>RoomDirection</returns>
         private RoomDirection GetRelativeDirection(RoomInfo otherRoom)
         {
+            if (Z == -1) Debug.Log("Pause");
             RoomDirection direction = default(RoomDirection);
             if (otherRoom.Z < Z) direction |= RoomDirection.SOUTH;
             if (otherRoom.Z > Z) direction |= RoomDirection.NORTH;
