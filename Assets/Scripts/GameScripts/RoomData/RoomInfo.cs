@@ -5,15 +5,53 @@ using UnityEngine;
 using Cebt.Shared;
 
 namespace Cebt.RoomData
-{
+{    
     public class RoomInfo
     {
-        //X is the east/west coordinate
-        public int X { get; set; } = 0;
-        //Z is the north/south coordinate
-        public int Z { get; set; } = 0;
+        public RoomInfo(int X, int Z, int Floor, RoomType type, Dictionary<RoomDirection, RoomComponent> walls)
+        {
+            networkedRoomInfo = new NetworkedRoomInfo(X, Z, Floor, type, walls);
+        }
 
-        public int FloorNumber { get; set; } = 0;
+        public RoomInfo(NetworkedRoomInfo networkedRoom, int index)
+        {
+            networkedRoomInfo = networkedRoom;
+            NetworkedRoomIndex = index;
+        }
+
+        public int NetworkedRoomIndex { get; private set; }
+        private NetworkedRoomInfo networkedRoomInfo;
+
+        #region networked stuff
+        //X is the east/west coordinate
+        public int X { get { return networkedRoomInfo.X; } }
+        //Z is the north/south coordinate
+        public int Z { get { return networkedRoomInfo.Z; } }
+
+        public int FloorNumber { get { return networkedRoomInfo.Floor; } }
+
+        public RoomType RoomType { get { return networkedRoomInfo.RoomType; } }
+        public Dictionary<RoomDirection, RoomComponent> Walls 
+        { 
+            get 
+            { 
+                return new Dictionary<RoomDirection, RoomComponent>
+                {
+                    { RoomDirection.NORTH, ((RoomComponent)networkedRoomInfo.NorthWall)},
+                    { RoomDirection.SOUTH, ((RoomComponent)networkedRoomInfo.SouthWall)},
+                    { RoomDirection.EAST, ((RoomComponent)networkedRoomInfo.EastWall)},
+                    { RoomDirection.WEST, ((RoomComponent)networkedRoomInfo.WestWall)}
+                }; 
+            } 
+        }
+
+        public NetworkedRoomInfo GetAsNetworkedRoomInfo()
+        {
+            return networkedRoomInfo;
+        }
+        
+        #endregion
+
 
         //the east/west physical size of the room
         public float RoomWidth = 10f;
@@ -27,15 +65,10 @@ namespace Cebt.RoomData
             }
         }
 
+        public string RoomName { get { return String.Format("{0}:{1}:{2}", X,Z,FloorNumber); } }
+
         public bool IsRendered { get; set; } = false;
-        public RoomType RoomType { get; set; } = RoomType.GENERIC;
-        public Dictionary<RoomDirection, RoomComponent> Walls { get; set; }
-            = new Dictionary<RoomDirection, RoomComponent> {
-            { RoomDirection.NORTH, RoomComponent.NO_WALL },
-            { RoomDirection.SOUTH, RoomComponent.NO_WALL },
-            { RoomDirection.EAST, RoomComponent.NO_WALL },
-            { RoomDirection.WEST, RoomComponent.NO_WALL }
-            };
+        
 
         public IEnumerable<RoomDirection> OpenDoorways 
         { 

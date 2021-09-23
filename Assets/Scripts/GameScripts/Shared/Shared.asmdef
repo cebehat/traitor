@@ -1,5 +1,5 @@
 {
-    "name": "Cebt.Shared",
+    "name": "Shared",
     "rootNamespace": "Cebt.Shared",
     "references": [],
     "includePlatforms": [],

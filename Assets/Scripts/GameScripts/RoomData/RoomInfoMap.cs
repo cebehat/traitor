@@ -1,6 +1,3 @@
-using MLAPI;
-using MLAPI.NetworkVariable;
-using MLAPI.Transports;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -13,7 +10,6 @@ namespace Cebt.RoomData
 {
     public class RoomInfoMap
     {
-
         private List<RoomInfo> _roomInfos;
 
         public int Count { get { return _roomInfos.Count; } }
@@ -23,24 +19,6 @@ namespace Cebt.RoomData
             _roomInfos = new List<RoomInfo>();
         }
 
-        //public bool CreateRoomNextTo(RoomInfo originRoom, RoomDirection roomDirection)
-        //{
-        //    if (!GetSpawnableDirections(originRoom).HasFlag(roomDirection)) return false;
-
-        //    coordinates newCoords = GetCoordinatesForAdjacent(originRoom, roomDirection);
-        //    int X = newCoords.X;
-        //    int Z = newCoords.Z;
-
-        //    var newRoom = new RoomInfo()
-        //    {
-        //        X = X,
-        //        Z = Z
-        //    };
-
-        //    _roomInfos.Add(newRoom);
-        //    return true;
-        //}
-
         public bool TryAddRoom(RoomInfo roomInfo)
         {
             if(GetRoomAtPosition(roomInfo.X, roomInfo.Z, roomInfo.FloorNumber) == null)
@@ -49,6 +27,11 @@ namespace Cebt.RoomData
                 return true;
             }
             return false;
+        }
+
+        public bool TryAddRoom(NetworkedRoomInfo networkedRoom, int index)
+        {
+            return TryAddRoom(new RoomInfo(networkedRoom, index));
         }
 
         public void AddRange(IEnumerable<RoomInfo> rooms)
@@ -91,6 +74,11 @@ namespace Cebt.RoomData
                 if (!adjacent.ContainsKey(direction)) return true;
             }
             return false;
+        }
+
+        public bool HasIndex(int index)
+        {
+            return _roomInfos.Any(roomInfo => roomInfo.NetworkedRoomIndex == index);
         }
 
         public IEnumerable<RoomInfo> GetRoomsWithSpawnableDirections()

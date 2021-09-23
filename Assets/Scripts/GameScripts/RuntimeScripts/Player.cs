@@ -1,14 +1,28 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Netcode;
+using UnityEngine.InputSystem;
+using StarterAssets;
 
-public class Player : MonoBehaviour
+public class Player : NetworkBehaviour
 {
-    Camera camera;
+    private Camera camera;
     // Start is called before the first frame update
     void Start()
     {
         camera = GetComponentInChildren<Camera>();
+        if (!IsLocalPlayer)
+        {
+            camera.enabled = false;
+            var firstPersonController = GetComponent<FirstPersonController>();
+            var input = GetComponent<PlayerInput>();
+            var listener = GetComponentInChildren<AudioListener>();
+            
+            listener.enabled = false;            
+            firstPersonController.enabled = false;
+            input.enabled = false;
+        }
     }
 
 
@@ -20,7 +34,7 @@ public class Player : MonoBehaviour
         RaycastHit hitInfo;
 
         Ray ray = new Ray(camera.transform.position, camera.transform.forward);
-        
+
         if (Physics.Raycast(ray, out hitInfo, 20f) && hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Interactible"))
         {
             var interactible = hitInfo.collider.GetComponent<IInteractible>();
@@ -32,7 +46,7 @@ public class Player : MonoBehaviour
                 {
                     targettedInteractible.Target(false);
                 }
-                
+
             }
             targettedInteractible = interactible;
         }
