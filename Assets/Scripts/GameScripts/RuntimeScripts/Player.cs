@@ -3,10 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.InputSystem;
-using StarterAssets;
+
+[RequireComponent(typeof(CharacterController))]
+#if ENABLE_INPUT_SYSTEM
+[RequireComponent(typeof(PlayerInput))]
+#endif
 
 public class Player : NetworkBehaviour
 {
+    [SerializeField]
+    [Tooltip("Input action assets to affect when inputs are enabled or disabled.")]
+    List<InputActionAsset> m_ActionAssets;
+
     private Camera camera;
     // Start is called before the first frame update
     void Start()
@@ -14,16 +22,65 @@ public class Player : NetworkBehaviour
         camera = GetComponentInChildren<Camera>();
         if (!IsLocalPlayer)
         {
-            camera.enabled = false;
-            var firstPersonController = GetComponent<FirstPersonController>();
-            var input = GetComponent<PlayerInput>();
-            var listener = GetComponentInChildren<AudioListener>();
-            
-            listener.enabled = false;            
-            firstPersonController.enabled = false;
-            input.enabled = false;
+            DisableInput();
+        }
+        else
+        {
+            EnableInput();
         }
     }
+
+    /// <summary>
+    /// Enable all actions referenced by this component.
+    /// </summary>
+    /// <remarks>
+    /// This function will automatically be called when this <see cref="InputActionManager"/> component is enabled.
+    /// However, this method can be called to enable input manually, such as after disabling it with <see cref="DisableInput"/>.
+    /// <br />
+    /// Note that enabling inputs will only enable the action maps contained within the referenced
+    /// action map assets (see <see cref="actionAssets"/>).
+    /// </remarks>
+    /// <seealso cref="DisableInput"/>
+    public void EnableInput()
+    {
+        if (m_ActionAssets == null)
+            return;
+
+        foreach (var actionAsset in m_ActionAssets)
+        {
+            if (actionAsset != null)
+            {
+                actionAsset.Enable();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Disable all actions referenced by this component.
+    /// </summary>
+    /// <remarks>
+    /// This function will automatically be called when this <see cref="InputActionManager"/> component is disabled.
+    /// However, this method can be called to disable input manually, such as after enabling it with <see cref="EnableInput"/>.
+    /// <br />
+    /// Note that disabling inputs will only disable the action maps contained within the referenced
+    /// action map assets (see <see cref="actionAssets"/>).
+    /// </remarks>
+    /// <seealso cref="EnableInput"/>
+    public void DisableInput()
+    {
+        if (m_ActionAssets == null)
+            return;
+
+        foreach (var actionAsset in m_ActionAssets)
+        {
+            if (actionAsset != null)
+            {
+                actionAsset.Disable();
+            }
+        }
+    }
+
+
 
 
     private IInteractible targettedInteractible = null;
