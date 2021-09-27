@@ -85,7 +85,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.netcode.gameobjects": {
-      "version": "file:K:/UnityProjects/com.unity.netcode.gameobjects/com.unity.netcode.gameobjects",
+      "version": "file:../Dependencies/MLAPI/com.unity.netcode.gameobjects",
       "depth": 0,
       "source": "local",
       "dependencies": {
