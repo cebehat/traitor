@@ -1,0 +1,4 @@
+[submodule "Dependencies/MLAPI"]
+	path = Dependencies/MLAPI
+	url = https://github.com/Unity-Technologies/com.unity.netcode.gameobjects.git
+	branch = develop
