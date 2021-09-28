@@ -140,7 +140,6 @@ namespace Cebt.RoomData
         /// <returns>RoomDirection</returns>
         private RoomDirection GetRelativeDirection(RoomInfo otherRoom)
         {
-            if (Z == -1) Debug.Log("Pause");
             RoomDirection direction = default(RoomDirection);
             if (otherRoom.Z < Z) direction |= RoomDirection.SOUTH;
             if (otherRoom.Z > Z) direction |= RoomDirection.NORTH;

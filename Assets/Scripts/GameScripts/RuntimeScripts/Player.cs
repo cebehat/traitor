@@ -15,23 +15,37 @@ public class Player : NetworkBehaviour
     [Tooltip("Input action assets to affect when inputs are enabled or disabled.")]
     List<InputActionAsset> m_ActionAssets;
 
+    [SerializeField]
+    public InputActionReference MoveAction;
+
     private Camera camera;
+    CharacterController characterController;
     // Start is called before the first frame update
     void Start()
     {
         camera = GetComponentInChildren<Camera>();
         if (!IsLocalPlayer)
         {
-            DisableInput();
+            //DisableInput();
+            camera.enabled = false;
+            GetComponentInChildren<AudioListener>().enabled = false;
         }
         else
         {
-            EnableInput();
+            //EnableInput();
+            characterController = GetComponent<CharacterController>();
         }
+    }
+
+    private void Action_performed(InputAction.CallbackContext obj)
+    {
+        Debug.Log("Move");
+        Debug.Log(obj.ReadValueAsObject().ToString());
     }
 
     public void EnableInput()
     {
+        Debug.Log("EnableInput");
         if (m_ActionAssets == null)
             return;
 
@@ -46,6 +60,7 @@ public class Player : NetworkBehaviour
 
     public void DisableInput()
     {
+        Debug.Log("DisableInput");
         if (m_ActionAssets == null)
             return;
 
@@ -67,35 +82,56 @@ public class Player : NetworkBehaviour
     {
         if (IsLocalPlayer)
         {
-            LayerMask mask = LayerMask.GetMask("Interactible");
-            RaycastHit hitInfo;
+            HandleInteractions();
+            Move();
+        }
+    }
 
-            Ray ray = new Ray(camera.transform.position, camera.transform.forward);
-
-            if (Physics.Raycast(ray, out hitInfo, 20f) && hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Interactible"))
+    private void Move()
+    {
+        var action = MoveAction.ToInputAction();
+        if (action != null)
+        {
+            Vector2 value = action.ReadValue<Vector2>();
+            Vector3 move = new Vector3(value.x, 0 ,value.y);
+            move = Vector3.ClampMagnitude(move, 1f);
+            if(move != Vector3.zero)
             {
-                var interactible = hitInfo.collider.GetComponent<IInteractible>();
-                if (targettedInteractible != interactible)
-                {
-                    Debug.Log("Hit Interactible: " + hitInfo.collider.name);
-                    interactible.Target(true);
-                    if (targettedInteractible != null)
-                    {
-                        targettedInteractible.Target(false);
-                    }
-
-                }
-                targettedInteractible = interactible;
+                characterController.SimpleMove(move * 5f);
             }
-            else
+            //Debug.Log("Move action: " + move.ToString());
+        }
+    }
+
+    private void HandleInteractions()
+    {
+        LayerMask mask = LayerMask.GetMask("Interactible");
+        RaycastHit hitInfo;
+
+        Ray ray = new Ray(camera.transform.position, camera.transform.forward);
+
+        if (Physics.Raycast(ray, out hitInfo, 20f) && hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Interactible"))
+        {
+            var interactible = hitInfo.collider.GetComponent<IInteractible>();
+            if (targettedInteractible != interactible)
             {
+                Debug.Log("Hit Interactible: " + hitInfo.collider.name);
+                interactible.Target(true);
                 if (targettedInteractible != null)
                 {
                     targettedInteractible.Target(false);
-                    targettedInteractible = null;
                 }
+
+            }
+            targettedInteractible = interactible;
+        }
+        else
+        {
+            if (targettedInteractible != null)
+            {
+                targettedInteractible.Target(false);
+                targettedInteractible = null;
             }
         }
-        
     }
 }

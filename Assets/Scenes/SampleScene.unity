@@ -513,6 +513,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mapGenerated:
     m_InternalValue: 0
+  foyerSpawned: 0
 --- !u!4 &972091057
 Transform:
   m_ObjectHideFlags: 0

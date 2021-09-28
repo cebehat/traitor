@@ -58,7 +58,7 @@ public class RoomSpawner : NetworkBehaviour
     // Start is called before the first frame update
     void Start()
     {
-         localRoomInfoMap = new RoomInfoMap();
+        localRoomInfoMap = new RoomInfoMap();
         if (houseSeed == 0) houseSeed = (int)UnityEngine.Random.Range(100f, 10000f);
         UnityEngine.Random.InitState(houseSeed);
         NetworkManager.Singleton.OnServerStarted += OnServerStartup;
@@ -79,11 +79,14 @@ public class RoomSpawner : NetworkBehaviour
         {
             IEnumerable<RoomInfo> unspawnedRooms = localRoomInfoMap.GetUnspawnedRooms();
 
+            //Debug.Log("unspawned rooms: " + unspawnedRooms.Count());
             foreach (var item in unspawnedRooms)
             {
                 SpawnRoom(item);
             }
         }
+
+
             
         //}
         
@@ -91,18 +94,20 @@ public class RoomSpawner : NetworkBehaviour
 
     void OnDestroy()
     {
+        Debug.Log("OnDestroy");
         StopAllCoroutines();
         networkedRoomInfoDictionary.Dispose();
     }
 
     private void OnServerStartup()
     {
+        Debug.Log("OnServerStartup");
         StartCoroutine("GenerateMap");
-
     }
 
     public void Awake()
     {
+        Debug.Log("Awake");
         networkedRoomInfoDictionary = new NetworkList<NetworkedRoomInfo>();
         networkedRoomInfoDictionary.OnListChanged += OnNetworkedRoomInfoListChanged;
         
@@ -214,8 +219,7 @@ public class RoomSpawner : NetworkBehaviour
     //Generate map needs to only be run by host if multiplayer.
     //it needs to be able to set a state when it's done, that allows players to spawn in.
     IEnumerator GenerateMap()
-    {
-        
+    {   
         SpawnEntryHall();
         yield return null; 
         
@@ -225,7 +229,7 @@ public class RoomSpawner : NetworkBehaviour
 
         while (!mapGenerated.Value)
         {
-            mapGenerated.Value = !GetRoomsWithSpawnableDirections().Any() && roomCount <= GetRoomCount;
+            mapGenerated.Value = !GetRoomsWithSpawnableDirections().Any() && MinRooms <= GetRoomCount;
             if (GetRoomsWithSpawnableDirections().Any())
             {
                 var originRoom = GetRoomsWithSpawnableDirections().First();
