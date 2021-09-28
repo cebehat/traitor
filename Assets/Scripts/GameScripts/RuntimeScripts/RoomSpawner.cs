@@ -26,12 +26,13 @@ public class RoomSpawner : NetworkBehaviour
 
     public NetworkList<NetworkedRoomInfo> networkedRoomInfoDictionary;
 
+    [SerializeField]
     public NetworkVariable<bool> mapGenerated;
 
     [SerializeField]
     public RoomInfoMap localRoomInfoMap;
 
-    //[SerializeField]
+    [SerializeField]
     private bool foyerSpawned = false;
 
 
@@ -60,10 +61,9 @@ public class RoomSpawner : NetworkBehaviour
          localRoomInfoMap = new RoomInfoMap();
         if (houseSeed == 0) houseSeed = (int)UnityEngine.Random.Range(100f, 10000f);
         UnityEngine.Random.InitState(houseSeed);
-        //networkedRoomInfoDictionary.OnListChanged += OnNetworkedRoomInfoListChanged;
         NetworkManager.Singleton.OnServerStarted += OnServerStartup;
-        //GenerateMap();
-        
+        NetworkManager.OnClientConnectedCallback += OnClientConnected;
+
     }
 
     // Update is called once per frame
@@ -79,7 +79,6 @@ public class RoomSpawner : NetworkBehaviour
         {
             IEnumerable<RoomInfo> unspawnedRooms = localRoomInfoMap.GetUnspawnedRooms();
 
-            Debug.Log("unspawned rooms: " + unspawnedRooms.Count());
             foreach (var item in unspawnedRooms)
             {
                 SpawnRoom(item);
@@ -106,7 +105,7 @@ public class RoomSpawner : NetworkBehaviour
     {
         networkedRoomInfoDictionary = new NetworkList<NetworkedRoomInfo>();
         networkedRoomInfoDictionary.OnListChanged += OnNetworkedRoomInfoListChanged;
-        NetworkManager.OnClientConnectedCallback += OnClientConnected;
+        
         mapGenerated = new NetworkVariable<bool>();
         mapGenerated.Value = false;
     }
@@ -126,7 +125,8 @@ public class RoomSpawner : NetworkBehaviour
     {
         if (changeEvent.Type == NetworkListEvent<NetworkedRoomInfo>.EventType.Add && !localRoomInfoMap.HasIndex(changeEvent.Index))
         {
-            AddRoomToLocalMapClientRpc(changeEvent.Value, changeEvent.Index);
+            localRoomInfoMap.TryAddRoom(changeEvent.Value, changeEvent.Index);
+            //AddRoomToLocalMapClientRpc(changeEvent.Value, changeEvent.Index);
         }
     }
 
@@ -225,7 +225,7 @@ public class RoomSpawner : NetworkBehaviour
 
         while (!mapGenerated.Value)
         {
-            mapGenerated.Value = !GetRoomsWithSpawnableDirections().Any();
+            mapGenerated.Value = !GetRoomsWithSpawnableDirections().Any() && roomCount <= GetRoomCount;
             if (GetRoomsWithSpawnableDirections().Any())
             {
                 var originRoom = GetRoomsWithSpawnableDirections().First();
