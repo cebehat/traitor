@@ -41,7 +41,6 @@ public class RoomSpawner : NetworkBehaviour
     [ServerRpc]
     void AddRoomToHouseServerRpc(NetworkedRoomInfo room, string roomId, ServerRpcParams rpcParams = default)
     {
-        Debug.Log(rpcParams.ToString());
         try
         {
             networkedRoomInfoDictionary.Add(room);
@@ -162,13 +161,11 @@ public class RoomSpawner : NetworkBehaviour
     }
     void AddRoomToHouse(RoomInfo room)
     {
-        Debug.Log("Adding room to house");
         AddRoomToHouseServerRpc(room.GetAsNetworkedRoomInfo(), room.RoomName);
     }
 
     void SetRoomAsSpawned(RoomInfo room)
     {
-        Debug.Log("Adding room to house");
         localRoomInfoMap.GetRoomAtPosition(room.X, room.Z, room.FloorNumber).IsRendered = true;
     }
 
@@ -225,8 +222,6 @@ public class RoomSpawner : NetworkBehaviour
         
         int roomCount = (int)Math.Round(UnityEngine.Random.Range(MinRooms, MaxRooms));
 
-        Debug.Log($"RoomCount {roomCount}");
-
         while (!mapGenerated.Value)
         {
             mapGenerated.Value = !GetRoomsWithSpawnableDirections().Any() && MinRooms <= GetRoomCount;
@@ -242,7 +237,6 @@ public class RoomSpawner : NetworkBehaviour
 
     private bool GenerateRooms(RoomInfo relativeRoom, bool finalRooms = false)
     {
-        Debug.Log(String.Format("Generating adjacent rooms for room at X{0}, Y{1}, Floor{2}", relativeRoom.X, relativeRoom.Z, relativeRoom.FloorNumber));
         foreach(var direction in relativeRoom.OpenDoorways)
         {
             var walls = new Dictionary<RoomDirection, RoomComponent>();

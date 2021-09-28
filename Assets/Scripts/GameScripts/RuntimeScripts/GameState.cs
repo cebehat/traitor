@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Cebt
 {
     public class GameState : NetworkBehaviour
-    {
+    {   
         void OnGUI()
         {
             GUILayout.BeginArea(new Rect(10, 10, 300, 300));

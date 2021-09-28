@@ -18,63 +18,43 @@ public class Player : NetworkBehaviour
     [SerializeField]
     public InputActionReference MoveAction;
 
+    [SerializeField]
+    public InputActionReference LookAction;
+
+    
+
+    Transform cameraTransform;
+    float pitch = 0f;
+
+    [Range(1f, 90f)]
+    public float maxPitch = 85f;
+    [Range(-1f, -90f)]
+    public float minPitch = -85f;
+    [Range(0.1f, 0.5f)]
+    public float mouseSensitivity = 0.1f;
+
     private Camera camera;
     CharacterController characterController;
     // Start is called before the first frame update
     void Start()
     {
+        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
         camera = GetComponentInChildren<Camera>();
+        cameraTransform = GetComponentInChildren<Camera>().transform;
         if (!IsLocalPlayer)
         {
-            //DisableInput();
-            camera.enabled = false;
-            GetComponentInChildren<AudioListener>().enabled = false;
+            camera.gameObject.SetActive(false);
         }
         else
         {
-            //EnableInput();
             characterController = GetComponent<CharacterController>();
         }
     }
 
-    private void Action_performed(InputAction.CallbackContext obj)
+    private void OnClientConnected(ulong obj)
     {
-        Debug.Log("Move");
-        Debug.Log(obj.ReadValueAsObject().ToString());
+        Debug.Log("Player connect");
     }
-
-    public void EnableInput()
-    {
-        Debug.Log("EnableInput");
-        if (m_ActionAssets == null)
-            return;
-
-        foreach (var actionAsset in m_ActionAssets)
-        {
-            if (actionAsset != null)
-            {
-                actionAsset.Enable();
-            }
-        }
-    }
-
-    public void DisableInput()
-    {
-        Debug.Log("DisableInput");
-        if (m_ActionAssets == null)
-            return;
-
-        foreach (var actionAsset in m_ActionAssets)
-        {
-            if (actionAsset != null)
-            {
-                actionAsset.Disable();
-            }
-        }
-    }
-
-
-
 
     private IInteractible targettedInteractible = null;
     // Update is called once per frame
@@ -82,25 +62,62 @@ public class Player : NetworkBehaviour
     {
         if (IsLocalPlayer)
         {
-            HandleInteractions();
+            Look();
             Move();
+            HandleInteractions();
         }
     }
 
-    private void Move()
+    void Look()
+    {
+        var action = LookAction.ToInputAction();
+        if (action != null && action.phase == InputActionPhase.Started)
+        {
+            Vector2 input = action.ReadValue<Vector2>();
+            float xInput = input.x * mouseSensitivity;
+            float yInput = input.y * mouseSensitivity;
+
+            transform.Rotate(0, xInput, 0);
+
+            pitch -= yInput;
+            pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+
+            Quaternion rot = Quaternion.Euler(pitch, 0, 0);
+            cameraTransform.localRotation = rot;
+        }
+    }
+
+    void Move()
     {
         var action = MoveAction.ToInputAction();
-        if (action != null)
+        if (action != null && action.phase == InputActionPhase.Started)
         {
             Vector2 value = action.ReadValue<Vector2>();
-            Vector3 move = new Vector3(value.x, 0 ,value.y);
-            move = Vector3.ClampMagnitude(move, 1f);
-            if(move != Vector3.zero)
+
+            float hAxis = value.x;
+            float vAxis = value.y;
+
+            var forward = cameraTransform.forward;
+            var right = cameraTransform.right;
+
+            forward.y = 0f;
+            right.y = 0f;
+            forward.Normalize();
+            right.Normalize();
+
+            var move = forward * vAxis + right * hAxis;
+
+            if (move != Vector3.zero)
             {
-                characterController.SimpleMove(move * 5f);
+                TranslateServerRpc((move.normalized * Time.deltaTime) * 5f);
             }
-            //Debug.Log("Move action: " + move.ToString());
         }
+    }
+
+    [ServerRpc]
+    void TranslateServerRpc(Vector3 translation)
+    {
+        this.transform.Translate(translation);
     }
 
     private void HandleInteractions()
