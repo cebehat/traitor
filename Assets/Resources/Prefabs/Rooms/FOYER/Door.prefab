@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 5923194936467170338}
   m_Layer: 0
   m_Name: DoorMesh
-  m_TagString: Untagged
+  m_TagString: PlayerCollidable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -140,7 +140,7 @@ GameObject:
   - component: {fileID: 914484884516066628}
   m_Layer: 0
   m_Name: Door
-  m_TagString: Untagged
+  m_TagString: PlayerCollidable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

@@ -76,6 +76,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 717594463850246491, guid: b18643d9814acec45be3e07dd46d403e, type: 3}
+      propertyPath: m_TagString
+      value: PlayerCollidable
+      objectReference: {fileID: 0}
     - target: {fileID: 717594464158951870, guid: b18643d9814acec45be3e07dd46d403e, type: 3}
       propertyPath: m_RootOrder
       value: 0
@@ -123,6 +127,18 @@ PrefabInstance:
     - target: {fileID: 717594464158951871, guid: b18643d9814acec45be3e07dd46d403e, type: 3}
       propertyPath: m_Name
       value: Doorway
+      objectReference: {fileID: 0}
+    - target: {fileID: 717594464158951871, guid: b18643d9814acec45be3e07dd46d403e, type: 3}
+      propertyPath: m_TagString
+      value: PlayerCollidable
+      objectReference: {fileID: 0}
+    - target: {fileID: 4169263942131605183, guid: b18643d9814acec45be3e07dd46d403e, type: 3}
+      propertyPath: m_TagString
+      value: PlayerCollidable
+      objectReference: {fileID: 0}
+    - target: {fileID: 6128261660467951639, guid: b18643d9814acec45be3e07dd46d403e, type: 3}
+      propertyPath: m_TagString
+      value: PlayerCollidable
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b18643d9814acec45be3e07dd46d403e, type: 3}

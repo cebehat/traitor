@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 717594463850246493}
   m_Layer: 0
   m_Name: Wall
-  m_TagString: Untagged
+  m_TagString: PlayerCollidable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -106,7 +106,7 @@ GameObject:
   - component: {fileID: 717594464158951870}
   m_Layer: 0
   m_Name: Doorway_Open
-  m_TagString: Untagged
+  m_TagString: PlayerCollidable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -142,7 +142,7 @@ GameObject:
   - component: {fileID: 6551051899699051876}
   m_Layer: 0
   m_Name: Wall
-  m_TagString: Untagged
+  m_TagString: PlayerCollidable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -237,7 +237,7 @@ GameObject:
   - component: {fileID: 3263583191265156142}
   m_Layer: 0
   m_Name: Wall
-  m_TagString: Untagged
+  m_TagString: PlayerCollidable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

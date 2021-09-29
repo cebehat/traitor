@@ -28,7 +28,7 @@ public class Room : MonoBehaviour
 
     void OnTriggerEnter(Collider coll){
         if(coll.CompareTag("Player")){
-            Debug.Log("Player Entered");
+            //Debug.Log("Player Entered");
         }
     }
 

@@ -21,7 +21,10 @@ public class Player : NetworkBehaviour
     [SerializeField]
     public InputActionReference LookAction;
 
-    
+    public NetworkVariable<Vector3> NetworkPosition = new NetworkVariable<Vector3>(NetworkVariableReadPermission.Everyone);
+    public NetworkVariable<Quaternion> NetworkRotation = new NetworkVariable<Quaternion>(NetworkVariableReadPermission.Everyone);
+
+
 
     Transform cameraTransform;
     float pitch = 0f;
@@ -33,22 +36,36 @@ public class Player : NetworkBehaviour
     [Range(0.1f, 0.5f)]
     public float mouseSensitivity = 0.1f;
 
-    private Camera camera;
     CharacterController characterController;
+    Collider collider;
     // Start is called before the first frame update
     void Start()
     {
         NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-        camera = GetComponentInChildren<Camera>();
         cameraTransform = GetComponentInChildren<Camera>().transform;
+        characterController = GetComponent<CharacterController>();
         if (!IsLocalPlayer)
         {
-            camera.gameObject.SetActive(false);
+            cameraTransform.gameObject.SetActive(false);
         }
         else
         {
-            characterController = GetComponent<CharacterController>();
+            
+            collider = GetComponent<CapsuleCollider>();
         }
+    }
+
+    void OnTriggerEnter(Collider coll)
+    {
+        if (coll.CompareTag("PlayerCollidable"))
+        {
+            Debug.Log("Player Trigger");
+        }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        Debug.Log("Player Collision");
     }
 
     private void OnClientConnected(ulong obj)
@@ -77,7 +94,7 @@ public class Player : NetworkBehaviour
             float xInput = input.x * mouseSensitivity;
             float yInput = input.y * mouseSensitivity;
 
-            transform.Rotate(0, xInput, 0);
+            RotateServerRpc(xInput);
 
             pitch -= yInput;
             pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
@@ -97,8 +114,8 @@ public class Player : NetworkBehaviour
             float hAxis = value.x;
             float vAxis = value.y;
 
-            var forward = cameraTransform.forward;
-            var right = cameraTransform.right;
+            var forward = transform.forward;
+            var right = transform.right;
 
             forward.y = 0f;
             right.y = 0f;
@@ -106,10 +123,13 @@ public class Player : NetworkBehaviour
             right.Normalize();
 
             var move = forward * vAxis + right * hAxis;
+            //var move = new Vector3(hAxis, 0f, vAxis);
 
             if (move != Vector3.zero)
             {
-                TranslateServerRpc((move.normalized * Time.deltaTime) * 5f);
+                characterController.Move(move.normalized * Time.deltaTime * 5f);                
+                TranslateServerRpc(move.normalized * Time.deltaTime * 5f);
+                //transform.Translate(move * Time.deltaTime * 5f);
             }
         }
     }
@@ -117,7 +137,29 @@ public class Player : NetworkBehaviour
     [ServerRpc]
     void TranslateServerRpc(Vector3 translation)
     {
-        this.transform.Translate(translation);
+        this.characterController.Move(translation);
+        //this.transform.Translate(translation);
+        TranslateClientRpc(translation);
+    }
+
+    [ClientRpc]
+    void TranslateClientRpc(Vector3 translation)
+    {
+        characterController.Move(translation);
+        //this.transform.Translate(translation);
+    }
+
+    [ServerRpc]
+    void RotateServerRpc(float rotation)
+    {
+        this.transform.Rotate(0, rotation, 0);
+        RotateClientRpc(rotation);
+    }
+
+    [ClientRpc]
+    void RotateClientRpc(float rotation)
+    {
+        this.transform.Rotate(0, rotation, 0);
     }
 
     private void HandleInteractions()
@@ -125,7 +167,7 @@ public class Player : NetworkBehaviour
         LayerMask mask = LayerMask.GetMask("Interactible");
         RaycastHit hitInfo;
 
-        Ray ray = new Ray(camera.transform.position, camera.transform.forward);
+        Ray ray = new Ray(cameraTransform.position, cameraTransform.forward);
 
         if (Physics.Raycast(ray, out hitInfo, 20f) && hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Interactible"))
         {

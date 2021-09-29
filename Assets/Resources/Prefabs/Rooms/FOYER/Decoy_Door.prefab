@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1749647384339810203}
   m_Layer: 0
   m_Name: Decoy_Door
-  m_TagString: Untagged
+  m_TagString: PlayerCollidable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -48,7 +48,7 @@ GameObject:
   - component: {fileID: 1749647384573091704}
   m_Layer: 0
   m_Name: Wall
-  m_TagString: Untagged
+  m_TagString: PlayerCollidable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -143,7 +143,7 @@ GameObject:
   - component: {fileID: 5429253883401245505}
   m_Layer: 0
   m_Name: Wall
-  m_TagString: Untagged
+  m_TagString: PlayerCollidable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -238,7 +238,7 @@ GameObject:
   - component: {fileID: 4393266682189361675}
   m_Layer: 0
   m_Name: Wall
-  m_TagString: Untagged
+  m_TagString: PlayerCollidable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -333,7 +333,7 @@ GameObject:
   - component: {fileID: 3613202434182074523}
   m_Layer: 0
   m_Name: Door
-  m_TagString: Untagged
+  m_TagString: PlayerCollidable
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
