@@ -10,6 +10,13 @@ namespace Cebt
     {
         private static string ip = "127.0.0.1";
 
+
+        private void Start()
+        {
+            var list = LobbyAPIHandler.GetLobbiesAsync().ContinueWith((result) => {
+
+            });
+        }
         void OnGUI()
         {
             GUILayout.BeginArea(new Rect(10, 10, 300, 300));
@@ -21,15 +28,15 @@ namespace Cebt
             {
                 StatusLabels();
             }
-
             GUILayout.EndArea();
         }
 
         static void StartButtons()
-        {
+        {            
             ip = GUILayout.TextField(ip);
             if (GUILayout.Button("Host"))
             {
+                LobbyAPIHandler.CreateLobbyAsync();
                 NetworkManager.Singleton.StartHost();
             }
             if (GUILayout.Button("Client")) {

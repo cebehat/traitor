@@ -33,8 +33,10 @@ public class Player : NetworkBehaviour
     public float maxPitch = 85f;
     [Range(-1f, -90f)]
     public float minPitch = -85f;
-    [Range(0.1f, 0.5f)]
-    public float mouseSensitivity = 0.1f;
+    [Range(0.01f, 0.15f)]
+    public float mouseSensitivity = 0.08f;
+    [Range(0.1f, 5f)]
+    public float movementSpeed = 3f;
 
     CharacterController characterController;
     Collider collider;
@@ -127,8 +129,8 @@ public class Player : NetworkBehaviour
 
             if (move != Vector3.zero)
             {
-                characterController.Move(move.normalized * Time.deltaTime * 5f);                
-                TranslateServerRpc(move.normalized * Time.deltaTime * 5f);
+                characterController.Move(move.normalized * Time.deltaTime * movementSpeed);                
+                TranslateServerRpc(move.normalized * Time.deltaTime * movementSpeed);
                 //transform.Translate(move * Time.deltaTime * 5f);
             }
         }
