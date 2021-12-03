@@ -43,5 +43,5 @@ public abstract class Interactible : MonoBehaviour, IInteractible
         IsTargetted = targetted;
     }
 
-    public abstract void OnInteract(Player player);
+    public abstract void OnInteract(CharacterMovement player);
 }

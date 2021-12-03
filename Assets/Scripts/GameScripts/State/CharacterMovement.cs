@@ -9,7 +9,7 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(PlayerInput))]
 #endif
 
-public class Player : NetworkBehaviour
+public class CharacterMovement : NetworkBehaviour
 {
     [SerializeField]
     [Tooltip("Input action assets to affect when inputs are enabled or disabled.")]

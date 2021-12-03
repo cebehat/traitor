@@ -68,12 +68,6 @@ public class RoomSpawner : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
-        //if (!mapGenerated)
-        //{
-        //    GenerateMap();
-        //}
-        //else
-        //{
         if (mapGenerated.Value)
         {
             IEnumerable<RoomInfo> unspawnedRooms = localRoomInfoMap.GetUnspawnedRooms();
@@ -84,11 +78,6 @@ public class RoomSpawner : NetworkBehaviour
                 SpawnRoom(item);
             }
         }
-
-
-            
-        //}
-        
     }
 
     void OnDestroy()
@@ -101,7 +90,7 @@ public class RoomSpawner : NetworkBehaviour
     private void OnServerStartup()
     {
         Debug.Log("OnServerStartup");
-        StartCoroutine("GenerateMap");
+        //StartCoroutine("GenerateMap");
     }
 
     public void Awake()

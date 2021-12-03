@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Door : Interactible
 {
-    public override void OnInteract(Player player)
+    public override void OnInteract(CharacterMovement player)
     {
         throw new System.NotImplementedException();
     }
